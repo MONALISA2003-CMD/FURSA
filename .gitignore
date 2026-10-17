@@ -1,0 +1,25 @@
+# Node
+node_modules/
+.next/
+out/
+coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+.venv/
+venv/
+.pytest_cache/
+.coverage
+
+# Secrets / local environment
+.env
+.env.*
+!.env.example
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
