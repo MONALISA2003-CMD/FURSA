@@ -1,0 +1,166 @@
+name: Apply Any FURSA ZIP
+
+on:
+  push:
+    paths:
+      - "*.zip"
+      - "**/*.zip"
+  workflow_dispatch:
+    inputs:
+      zip_file:
+        description: "ZIP file in repository root (leave blank to auto-select)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fursa-bundle-apply
+  cancel-in-progress: false
+
+jobs:
+  apply-zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Select ZIP
+        id: pick
+        shell: bash
+        env:
+          REQUESTED_ZIP: ${{ inputs.zip_file }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$REQUESTED_ZIP" ]]; then
+            candidate="$REQUESTED_ZIP"
+          elif [[ "$EVENT_NAME" == "push" ]]; then
+            candidate="$(git diff-tree --no-commit-id --name-only -r HEAD | grep -E '^[^/]+\.zip$' | tail -n 1 || true)"
+          else
+            candidate="$(find . -maxdepth 1 -type f -name '*.zip' -printf '%f\n' | sort | tail -n 1)"
+          fi
+          if [[ -z "$candidate" || "$candidate" == */* || "$candidate" != *.zip || ! -f "$candidate" ]]; then
+            echo "No ZIP found in repository root." >&2
+            exit 1
+          fi
+          echo "file=$candidate" >> "$GITHUB_OUTPUT"
+          echo "Selected $candidate"
+
+      - name: Validate and extract ZIP
+        env:
+          ZIP_FILE: ${{ steps.pick.outputs.file }}
+        run: |
+          python - <<'PY'
+          import json, os, stat, zipfile
+          from pathlib import Path, PurePosixPath
+
+          root = Path.cwd().resolve()
+          archive_name = os.environ["ZIP_FILE"]
+          archive = root / archive_name
+          protected = {archive_name, ".github/workflows/apply-any-fursa-zip.yml",
+                       ".github/workflows/apply-fursa-bundle.yml"}
+          max_files, max_bytes = 5000, 100 * 1024 * 1024
+
+          def clean(raw):
+              if not isinstance(raw, str) or not raw.strip() or "\\" in raw or "\x00" in raw:
+                  raise ValueError(f"Invalid path: {raw!r}")
+              p = PurePosixPath(raw)
+              if p.is_absolute() or any(x in ("", ".", "..") for x in p.parts) or ".git" in p.parts:
+                  raise ValueError(f"Unsafe path: {raw!r}")
+              rel = p.as_posix()
+              if rel in protected:
+                  raise ValueError(f"Protected path: {rel}")
+              return rel
+
+          def target_for(rel):
+              target = root.joinpath(*PurePosixPath(rel).parts)
+              cursor = root
+              for part in PurePosixPath(rel).parts[:-1]:
+                  cursor = cursor / part
+                  if cursor.is_symlink():
+                      raise ValueError(f"Symlinked parent forbidden: {cursor}")
+              if not target.resolve(strict=False).is_relative_to(root):
+                  raise ValueError(f"Path escapes repository: {rel}")
+              return target
+
+          with zipfile.ZipFile(archive) as z:
+              infos = z.infolist()
+              if len(infos) > max_files or sum(i.file_size for i in infos) > max_bytes:
+                  raise SystemExit("ZIP exceeds safety limits.")
+              names = [i.filename for i in infos]
+              manifest = {"version": "plain-zip", "replace": [], "delete": []}
+              files = {}
+
+              if "manifest.json" in names:
+                  try:
+                      manifest = json.loads(z.read("manifest.json").decode("utf-8"))
+                  except Exception as e:
+                      raise SystemExit(f"Invalid manifest.json: {e}")
+                  replace, delete = manifest.get("replace", []), manifest.get("delete", [])
+                  if not isinstance(replace, list) or not isinstance(delete, list):
+                      raise SystemExit("Manifest replace/delete must be arrays.")
+                  replace = [clean(p) for p in replace]
+                  delete = [clean(p) for p in delete]
+                  if len(set(replace)) != len(replace) or len(set(delete)) != len(delete):
+                      raise SystemExit("Duplicate manifest path.")
+                  if set(replace) & set(delete):
+                      raise SystemExit("A path cannot be both replaced and deleted.")
+                  for i in infos:
+                      if i.is_dir() or i.filename == "manifest.json":
+                          continue
+                      if ((i.external_attr >> 16) & 0o170000) == stat.S_IFLNK:
+                          raise SystemExit(f"Symlink forbidden: {i.filename}")
+                      if not i.filename.startswith("payload/"):
+                          raise SystemExit(f"Expected payload/ entry: {i.filename}")
+                      rel = clean(i.filename[len("payload/"):])
+                      if rel in files:
+                          raise SystemExit(f"Duplicate payload: {rel}")
+                      files[rel] = z.read(i)
+                  if set(files) != set(replace):
+                      raise SystemExit("Manifest and payload file list do not match.")
+              else:
+                  delete = []
+                  for i in infos:
+                      if i.is_dir():
+                          continue
+                      if ((i.external_attr >> 16) & 0o170000) == stat.S_IFLNK:
+                          raise SystemExit(f"Symlink forbidden: {i.filename}")
+                      rel = clean(i.filename)
+                      if rel in files:
+                          raise SystemExit(f"Duplicate ZIP path: {rel}")
+                      files[rel] = z.read(i)
+
+          deleted = []
+          for rel in delete:
+              p = target_for(rel)
+              if p.is_symlink() or p.is_file():
+                  p.unlink()
+                  deleted.append(rel)
+              elif p.exists():
+                  raise SystemExit(f"Delete path is not a file: {rel}")
+
+          for rel, data in files.items():
+              p = target_for(rel)
+              if p.is_symlink():
+                  p.unlink()
+              p.parent.mkdir(parents=True, exist_ok=True)
+              p.write_bytes(data)
+
+          print(f"Applied {archive_name}: {len(files)} files written/replaced; {len(deleted)} deleted.")
+          print("Only files explicitly listed in manifest.delete are deleted.")
+          PY
+
+      - name: Commit applied files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "ZIP made no changes."
+            exit 0
+          fi
+          git commit -m "Apply FURSA ZIP bundle"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
