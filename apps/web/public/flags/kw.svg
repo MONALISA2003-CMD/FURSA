@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40">
+  <title>Kuwait flag</title>
+  <rect width="60" height="40" rx="1" fill="#fff"/>
+  <path fill="#007a3d" d="M0 0h60v13.33H0z"/>
+  <path fill="#ce1126" d="M0 26.67h60V40H0z"/>
+  <path fill="#000" d="M0 0h15l9 13.33-9 13.34H0z"/>
+</svg>

@@ -193,3 +193,350 @@ body { font-family: Inter, "Noto Sans Arabic", "Segoe UI", Tahoma, Arial, sans-s
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Phase 2 / Increment 2 — homepage hierarchy, country flags, and category icons. */
+.fursa-hero {
+  background:
+    radial-gradient(circle at 86% 18%, rgba(255, 79, 94, .10), transparent 27%),
+    radial-gradient(circle at 75% 78%, rgba(23, 70, 200, .07), transparent 31%),
+    linear-gradient(135deg, #f5f8ff 0%, #ffffff 56%, #fff7f8 100%);
+}
+.fursa-hero-inner {
+  min-height: 520px;
+  grid-template-columns: minmax(0, 1.16fr) minmax(270px, .84fr);
+  gap: clamp(26px, 4vw, 54px);
+}
+.fursa-hero-copy { position: relative; z-index: 2; }
+.fursa-kicker { color: var(--brand-blue); letter-spacing: .08em; }
+.fursa-kicker-dot { background: var(--brand-coral); box-shadow: 0 0 0 4px rgba(255, 79, 94, .14); }
+.fursa-hero h1 { color: var(--brand-deep-navy); }
+.fursa-hero-lead { color: #4f607a; }
+.fursa-search-box { border-color: #e0e7f5; box-shadow: 0 16px 44px rgba(16, 38, 79, .09); }
+.fursa-primary-button { background: var(--brand-blue); }
+.fursa-primary-button:hover { background: var(--brand-blue-hover); }
+.fursa-primary-button svg,
+.fursa-card-arrow svg,
+.fursa-category-arrow svg,
+.fursa-inline-link svg,
+.fursa-light-button svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.fursa-check { color: var(--brand-coral-text); }
+.fursa-hero-brand-stage {
+  min-height: 350px;
+  padding: 24px;
+  border: 1px solid rgba(220, 228, 240, .95);
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(255,255,255,.97), rgba(237,243,255,.86));
+  box-shadow: 0 25px 60px rgba(16, 38, 79, .075);
+  isolation: isolate;
+}
+.fursa-hero-logo {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 315px);
+  max-height: 325px;
+  filter: drop-shadow(0 8px 17px rgba(16, 38, 79, .045));
+}
+.fursa-hero-accent-orb {
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.fursa-hero-accent-orb-one {
+  width: 118px;
+  height: 118px;
+  inset-inline-end: 8%;
+  top: 7%;
+  background: rgba(255, 79, 94, .10);
+}
+.fursa-hero-accent-orb-two {
+  width: 82px;
+  height: 82px;
+  inset-inline-start: 8%;
+  bottom: 11%;
+  border: 1px solid rgba(23, 70, 200, .15);
+  background: rgba(237, 243, 255, .75);
+}
+.fursa-hero-tag {
+  position: absolute;
+  z-index: 2;
+  inset-inline: 15px;
+  bottom: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--brand-deep-navy);
+  font-size: 11px;
+  line-height: 1.5;
+  font-weight: 800;
+  text-align: center;
+}
+.fursa-hero-tag > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand-coral);
+  flex: 0 0 auto;
+}
+.fursa-section-eyebrow { color: var(--brand-blue); letter-spacing: .11em; }
+.fursa-section-heading h2,
+.fursa-trust-copy h2,
+.fursa-empty-copy h2 { color: var(--brand-deep-navy); }
+.fursa-section-heading p { color: var(--brand-muted); }
+
+/* Country cards use local SVG flags plus a persistent written country label. */
+.fursa-country-grid { align-items: stretch; }
+.fursa-country-card {
+  min-height: 150px;
+  gap: 13px;
+  border-color: var(--brand-line);
+  box-shadow: 0 2px 0 rgba(16, 38, 79, .015);
+}
+.fursa-country-card:hover,
+.fursa-country-card:focus-visible {
+  border-color: var(--brand-coral);
+  background: linear-gradient(155deg, #fff 65%, var(--brand-coral-soft));
+  box-shadow: 0 11px 26px rgba(16, 38, 79, .07);
+}
+.fursa-country-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 28px;
+}
+.fursa-country-flag {
+  display: block;
+  width: 40px;
+  height: 26px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 3px;
+  filter: drop-shadow(0 1px 1px rgba(16, 38, 79, .11));
+}
+.fursa-country-code {
+  display: inline-grid;
+  place-items: center;
+  min-width: 35px;
+  height: 27px;
+  padding-inline: 6px;
+  border-radius: 8px;
+  background: var(--brand-blue-soft);
+  color: var(--brand-blue);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .04em;
+}
+.fursa-country-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.fursa-country-arrow,
+.fursa-category-arrow,
+.fursa-inline-link svg,
+.fursa-light-button svg {
+  color: var(--brand-coral-text);
+}
+.fursa-country-arrow {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.fursa-country-arrow svg,
+.fursa-category-arrow svg { width: 17px; height: 17px; }
+.rtl .fursa-country-arrow svg,
+.rtl .fursa-category-arrow svg,
+.rtl .fursa-inline-link svg,
+.rtl .fursa-light-button svg { transform: rotate(180deg); }
+
+/* Category cards use one consistent inline SVG line-icon style, no Unicode glyphs. */
+.fursa-category-section { padding-top: 8px; }
+.fursa-category-card {
+  min-height: 88px;
+  justify-content: flex-start;
+  border-color: var(--brand-line);
+  gap: 13px;
+  padding: 16px;
+  box-shadow: 0 2px 0 rgba(16, 38, 79, .015);
+}
+.fursa-category-card:hover,
+.fursa-category-card:focus-visible {
+  border-color: rgba(255, 79, 94, .72);
+  background: linear-gradient(155deg, #fff 66%, var(--brand-coral-soft));
+}
+.fursa-category-symbol {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  background: var(--brand-blue-soft);
+  color: var(--brand-blue);
+  font-size: 14px;
+}
+.fursa-category-symbol::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  inset-inline-end: 5px;
+  top: 5px;
+  border-radius: 50%;
+  background: var(--brand-coral);
+}
+.fursa-category-symbol svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.fursa-category-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fursa-category-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+  color: var(--brand-coral-text);
+}
+.fursa-category-card:hover .fursa-category-symbol,
+.fursa-category-card:focus-visible .fursa-category-symbol {
+  background: var(--brand-coral-soft);
+  color: var(--brand-blue);
+}
+
+/* Reference-data loading and error states keep the layout deliberate. */
+.fursa-loading-grid { width: 100%; }
+.fursa-country-skeleton,
+.fursa-category-skeleton {
+  border: 1px solid var(--brand-line);
+  border-radius: 15px;
+  background: linear-gradient(100deg, #f4f6fb 20%, #ffffff 38%, #f4f6fb 58%);
+  background-size: 220% 100%;
+  animation: fursa-skeleton-pulse 1.5s ease-in-out infinite;
+}
+.fursa-country-skeleton { min-height: 150px; }
+.fursa-category-skeleton { min-height: 88px; }
+@keyframes fursa-skeleton-pulse { to { background-position-x: -220%; } }
+.fursa-reference-error,
+.fursa-reference-empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--brand-line);
+  border-radius: 14px;
+  background: var(--brand-neutral-soft);
+  color: var(--brand-muted);
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: center;
+}
+.fursa-reference-error p { margin: 0; }
+.fursa-retry-button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--brand-blue);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--brand-blue);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.fursa-retry-button:hover { background: var(--brand-blue-soft); }
+.fursa-trust-card { border-color: #e4e9f5; background: linear-gradient(145deg, #f5f8ff, #ffffff 70%, #fff6f7); }
+.fursa-trust-number { background: var(--brand-blue-soft); color: var(--brand-blue); box-shadow: inset 0 -2px 0 rgba(23, 70, 200, .07); }
+.fursa-trust-list li:first-child .fursa-trust-number,
+.fursa-trust-list li:last-child .fursa-trust-number { background: var(--brand-coral-soft); color: var(--brand-coral-text); }
+.fursa-catalogue-note { background: var(--brand-deep-navy); }
+.fursa-light-button { color: var(--brand-blue) !important; }
+.fursa-light-button:hover { background: var(--brand-blue-soft); }
+.fursa-safety-icon { background: var(--brand-coral-soft); color: var(--brand-coral-text); }
+.fursa-inline-link { color: var(--brand-blue) !important; }
+.fursa-inline-link:hover { color: var(--brand-blue-hover) !important; }
+
+@media (max-width: 900px) {
+  .fursa-hero-inner { grid-template-columns: minmax(0, 1fr) minmax(230px, .7fr); }
+  .fursa-hero-brand-stage { min-height: 315px; padding: 18px; }
+  .fursa-hero-logo { max-height: 265px; width: min(100%, 275px); }
+  .fursa-country-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .fursa-category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  .fursa-hero-inner { grid-template-columns: minmax(0, 1fr); gap: 22px; padding-block: 32px 36px; }
+  .fursa-hero h1 { font-size: clamp(35px, 9.5vw, 45px); }
+  .fursa-hero-brand-stage {
+    min-height: 0;
+    width: min(100%, 280px);
+    margin-inline: auto;
+    padding: 9px 16px 34px;
+    border-radius: 20px;
+    box-shadow: 0 12px 28px rgba(16, 38, 79, .05);
+  }
+  .fursa-hero-logo { width: 126px; max-height: 132px; }
+  .fursa-hero-accent-orb-one { width: 62px; height: 62px; }
+  .fursa-hero-accent-orb-two { width: 48px; height: 48px; }
+  .fursa-hero-tag { bottom: 7px; font-size: 10px; }
+  .fursa-country-card { min-height: 126px; padding: 13px; }
+  .fursa-country-name { font-size: 12px; }
+  .fursa-category-card { min-height: 78px; padding: 11px; gap: 9px; font-size: 12px; }
+  .fursa-category-symbol { width: 34px; height: 34px; border-radius: 10px; }
+  .fursa-category-symbol svg { width: 20px; height: 20px; }
+  .fursa-category-symbol::after { width: 5px; height: 5px; top: 4px; inset-inline-end: 4px; }
+  .fursa-country-skeleton { min-height: 126px; }
+  .fursa-category-skeleton { min-height: 78px; }
+}
+@media (max-width: 380px) {
+  .fursa-country-flag { width: 34px; height: 23px; }
+  .fursa-country-card-top { gap: 5px; }
+  .fursa-country-code { min-width: 31px; height: 24px; padding-inline: 4px; }
+  .fursa-category-card { gap: 7px; padding: 9px; font-size: 11px; }
+  .fursa-category-symbol { width: 31px; height: 31px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fursa-country-skeleton, .fursa-category-skeleton { animation: none; background: #f3f6fc; }
+  .fursa-country-card, .fursa-category-card { transition: none; }
+}
+
+.fursa-country-flag-fallback {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  min-height: 26px;
+  border: 1px solid var(--brand-line);
+  border-radius: 4px;
+  background: var(--brand-neutral-soft);
+  color: var(--brand-blue);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .02em;
+}
+@media (max-width: 380px) { .fursa-country-flag-fallback { width: 34px; min-height: 23px; font-size: 8px; } }
