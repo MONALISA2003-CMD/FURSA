@@ -86,3 +86,48 @@
     transition: none !important;
   }
 }
+
+
+/* Phase 2 visual correction based on the live mobile review.
+   The header/footer wordmarks were still inheriting legacy navy/teal values,
+   even though the full logo and brand tokens had already moved to blue/coral. */
+.fursa-header .fursa-brand,
+.fursa-header .fursa-brand-name,
+.fursa-header .fursa-brand-name strong,
+.fursa-header .fursa-brand-name > span,
+.fursa-footer .fursa-footer-brand,
+.fursa-footer .fursa-footer-brand > span,
+.fursa-footer .fursa-footer-brand > span > strong,
+.fursa-footer .fursa-footer-brand > span > span {
+  color: var(--brand-blue, #1746c8) !important;
+}
+.fursa-header .fursa-brand-mark,
+.fursa-footer .fursa-footer-brand img {
+  background: transparent;
+  object-fit: contain;
+}
+
+/* Do not break ordinary words into syllables inside the compact mobile cards.
+   Keep Arabic/Latin isolation but allow wrapping at natural word boundaries. */
+.fursa-country-name,
+.fursa-category-name {
+  unicode-bidi: plaintext;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
+}
+
+@media (max-width: 680px) {
+  .fursa-category-card {
+    min-width: 0;
+    align-items: center;
+  }
+  .fursa-category-name {
+    min-width: 0;
+    line-height: 1.45;
+    white-space: normal;
+  }
+  .fursa-country-name {
+    line-height: 1.45;
+  }
+}
