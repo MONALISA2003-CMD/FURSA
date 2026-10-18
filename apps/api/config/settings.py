@@ -7,7 +7,8 @@ REPOSITORY_ROOT = BASE_DIR.parent.parent
 env = environ.Env(
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
-    )
+    CORS_ALLOWED_ORIGINS=(list, []),
+)
 env_file = REPOSITORY_ROOT / ".env"
 if env_file.is_file():
     env.read_env(env_file, overwrite=False)
@@ -15,6 +16,7 @@ if env_file.is_file():
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="unsafe-local-development-key-change-before-deploy")
 DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+CORS_ALLOWED_ORIGINS = [origin.rstrip("/") for origin in env.list("CORS_ALLOWED_ORIGINS", default=[])]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -29,6 +31,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "core.cors.PublicApiCorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",

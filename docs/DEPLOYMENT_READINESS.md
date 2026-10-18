@@ -27,8 +27,9 @@ Do not copy database URLs, passwords, or Django secrets into GitHub, this docume
 
 1. Open `https://fursa-api-1440.onrender.com/`. The response should be JSON identifying `fursa-api`.
 2. Open `https://fursa-api-1440.onrender.com/api/v1/health/`. The successful response should include `"status":"ok"` and `"database":"connected"`.
-3. Open `https://fursa-web-a2ot.onrender.com/en` and `https://fursa-web-a2ot.onrender.com/ar` to confirm both frontend locales load.
-4. If the health endpoint says `database: unavailable`, do not paste the URL into chat. Open Render → `fursa-api` → Environment and confirm `DATABASE_URL` exists; then inspect Render logs for the service. Rotate the database role password and update Render if connection credentials were exposed.
+3. Open `https://fursa-api-1440.onrender.com/api/v1/countries/` and `/api/v1/jobs/` to confirm reference data and the paginated job endpoint load. The listing is expected to be empty until real reviewed jobs are published.
+4. Open `https://fursa-web-a2ot.onrender.com/en` and `https://fursa-web-a2ot.onrender.com/ar` to confirm both frontend locales load and the search page can call the API.
+5. If the health endpoint says `database: unavailable`, do not paste the URL into chat. Open Render → `fursa-api` → Environment and confirm `DATABASE_URL` exists; then inspect Render logs for the service. Rotate the database role password and update Render if connection credentials were exposed.
 
 ## Render health check setting
 
@@ -45,6 +46,8 @@ Use `/api/v1/health/` for a manual dependency/readiness check: it executes `SELE
 
 Render's latest logs originally showed Python 3.14.8, while GitHub Actions tests on Python 3.12. The Render API environment is now pinned to `PYTHON_VERSION=3.12.11`, and the included `.python-version` file keeps the repo default consistent. Verify the next Render build logs say Python 3.12.11.
 
-## Current scope gap
+## Migration and current scope
 
-The Neon database has not yet been migrated to the FURSA product schema. Its table inventory currently shows only `fursa_project_metadata`. The job catalogue, source records, application routes, publication gates, review queue and safety reporting remain product work. Start the next feature slice with Django models and migrations, then public job search/detail API and a real Next.js search/detail journey.
+Before deploying the job-catalogue bundle, set the Render API Start Command to `python apps/api/manage.py migrate --noinput && gunicorn --chdir apps/api config.wsgi:application --bind 0.0.0.0:$PORT`. This is required so Django applies the new versioned schema before serving traffic.
+
+The job-catalogue bundle introduces the first source-backed product schema, public search/detail endpoints, bilingual country/category reference data, source-safe serializers, and the Next.js search/detail journey. It intentionally creates no fake or sample vacancies. There are no region rows yet, and the volunteer review/publication workflow and safety reporting remain later-phase work. PostgreSQL full-text queries are present; a dedicated GIN index and the search-performance benchmark remain follow-up work before pilot sign-off.
