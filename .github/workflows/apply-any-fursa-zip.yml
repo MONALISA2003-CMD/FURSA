@@ -4,11 +4,10 @@ on:
   push:
     paths:
       - "*.zip"
-      - "**/*.zip"
   workflow_dispatch:
     inputs:
       zip_file:
-        description: "ZIP file in repository root (leave blank to auto-select)"
+        description: "ZIP file in repository root (required if multiple ZIPs exist)"
         required: false
         type: string
 
@@ -23,7 +22,7 @@ jobs:
   apply-zip:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
@@ -35,21 +34,50 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
+          candidate=""
+
           if [[ -n "$REQUESTED_ZIP" ]]; then
             candidate="$REQUESTED_ZIP"
           elif [[ "$EVENT_NAME" == "push" ]]; then
-            candidate="$(git diff-tree --no-commit-id --name-only -r HEAD | grep -E '^[^/]+\.zip$' | tail -n 1 || true)"
+            mapfile -t candidates < <(
+              git diff-tree --no-commit-id --name-only --diff-filter=ACMR -r HEAD \
+                | grep -E '^[^/]+\.zip$' \
+                | sort -u || true
+            )
+            if (( ${#candidates[@]} == 0 )); then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "No added or modified root ZIP was found; this may be a ZIP-deletion-only commit. Nothing to do."
+              exit 0
+            fi
+            if (( ${#candidates[@]} > 1 )); then
+              printf 'Multiple ZIPs changed. Run this workflow manually and specify zip_file:\n%s\n' "${candidates[*]}" >&2
+              exit 1
+            fi
+            candidate="${candidates[0]}"
           else
-            candidate="$(find . -maxdepth 1 -type f -name '*.zip' -printf '%f\n' | sort | tail -n 1)"
+            mapfile -t candidates < <(find . -maxdepth 1 -type f -name '*.zip' -printf '%f\n' | sort)
+            if (( ${#candidates[@]} == 0 )); then
+              echo "No ZIP found in the repository root." >&2
+              exit 1
+            fi
+            if (( ${#candidates[@]} > 1 )); then
+              printf 'Multiple ZIPs are available. Set the zip_file input to one of:\n%s\n' "${candidates[*]}" >&2
+              exit 1
+            fi
+            candidate="${candidates[0]}"
           fi
+
           if [[ -z "$candidate" || "$candidate" == */* || "$candidate" != *.zip || ! -f "$candidate" ]]; then
-            echo "No ZIP found in repository root." >&2
+            echo "ZIP must be an existing file in the repository root." >&2
             exit 1
           fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "file=$candidate" >> "$GITHUB_OUTPUT"
           echo "Selected $candidate"
 
       - name: Validate and extract ZIP
+        if: steps.pick.outputs.skip != 'true'
         env:
           ZIP_FILE: ${{ steps.pick.outputs.file }}
         run: |
@@ -73,6 +101,8 @@ jobs:
               rel = p.as_posix()
               if rel in protected:
                   raise ValueError(f"Protected path: {rel}")
+              if rel == ".github/workflows" or rel.startswith(".github/workflows/"):
+                  raise ValueError(f"Workflow files must be managed manually: {rel}")
               return rel
 
           def target_for(rel):
@@ -153,7 +183,40 @@ jobs:
           print("Only files explicitly listed in manifest.delete are deleted.")
           PY
 
+      - name: Set up Python for validation
+        if: steps.pick.outputs.skip != 'true'
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: apps/api/requirements.txt
+
+      - name: Run API checks against extracted files
+        if: steps.pick.outputs.skip != 'true'
+        working-directory: apps/api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+          python manage.py test
+
+      - name: Set up Node for validation
+        if: steps.pick.outputs.skip != 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Run frontend checks against extracted files
+        if: steps.pick.outputs.skip != 'true'
+        working-directory: apps/web
+        run: |
+          npm install
+          npm run typecheck
+          npm run build
+
       - name: Commit applied files
+        if: steps.pick.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
