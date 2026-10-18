@@ -5,7 +5,7 @@ from django.db.utils import DatabaseError
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
-from .models import ApplicationRoute, Category, Country, Source, Vacancy
+from .models import ApplicationRoute, Category, Country, Region, Source, Vacancy
 
 
 class HealthEndpointTests(TestCase):
@@ -70,6 +70,8 @@ class PublicJobCatalogueTests(TestCase):
         route_status=ApplicationRoute.RouteStatus.OK,
         with_source=True,
         description_en="Build and maintain software applications.",
+        country=None,
+        region=None,
     ):
         now = timezone.now()
         vacancy = Vacancy.objects.create(
@@ -80,7 +82,8 @@ class PublicJobCatalogueTests(TestCase):
             description_original="Original source-backed test description.",
             description_en=description_en,
             description_ar="بناء تطبيقات البرمجيات وصيانتها.",
-            country=self.country,
+            country=country or self.country,
+            region=region,
             category=self.category,
             status=status,
             published_at=now if status == Vacancy.Status.PUBLISHED else None,
@@ -146,17 +149,54 @@ class PublicJobCatalogueTests(TestCase):
         draft_response = self.client.get(f"/api/v1/jobs/{draft.id}/")
         self.assertEqual(draft_response.status_code, 404)
 
-    def test_reference_endpoints_return_bilingual_countries_and_categories(self):
+    def test_reference_endpoints_return_bilingual_countries_categories_and_regions(self):
         countries = self.client.get("/api/v1/countries/")
         categories = self.client.get("/api/v1/categories/")
-        regions = self.client.get("/api/v1/regions/?country=AE")
+        all_regions = self.client.get("/api/v1/regions/")
+
         self.assertEqual(countries.status_code, 200)
         self.assertEqual(len(countries.json()), 5)
         self.assertTrue(any(row["code"] == "AE" and row["name_ar"] for row in countries.json()))
         self.assertEqual(categories.status_code, 200)
         self.assertTrue(any(row["slug"] == "it-software" for row in categories.json()))
-        self.assertEqual(regions.status_code, 200)
-        self.assertEqual(regions.json(), [])
+        self.assertEqual(all_regions.status_code, 200)
+        self.assertEqual(len(all_regions.json()), 38)
+
+        expected_region_counts = {"AE": 7, "SA": 13, "QA": 8, "KW": 6, "BH": 4}
+        for country_code, expected_count in expected_region_counts.items():
+            with self.subTest(country=country_code):
+                response = self.client.get("/api/v1/regions/", {"country": country_code})
+                self.assertEqual(response.status_code, 200)
+                rows = response.json()
+                self.assertEqual(len(rows), expected_count)
+                self.assertTrue(all(row["country_code"] == country_code for row in rows))
+                self.assertTrue(all(row["code"] and row["name_en"] and row["name_ar"] for row in rows))
+
+        uae_rows = self.client.get("/api/v1/regions/?country=AE").json()
+        saudi_rows = self.client.get("/api/v1/regions/?country=SA").json()
+        self.assertTrue(any(row["code"] == "ae-dubai" and row["name_ar"] == "دبي" for row in uae_rows))
+        self.assertTrue(any(row["code"] == "sa-riyadh" and row["name_ar"] == "الرياض" for row in saudi_rows))
+
+    def test_search_filters_by_region_and_country_without_cross_country_matches(self):
+        dubai = Region.objects.get(code="ae-dubai")
+        riyadh = Region.objects.get(code="sa-riyadh")
+        saudi_arabia = Country.objects.get(code="SA")
+        dubai_job = self.create_vacancy(title="Dubai Software Engineer", region=dubai)
+        riyadh_job = self.create_vacancy(
+            title="Riyadh Software Engineer",
+            country=saudi_arabia,
+            region=riyadh,
+        )
+
+        response = self.client.get("/api/v1/jobs/", {"region": "ae-dubai"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["count"], 1)
+        self.assertEqual(response.json()["results"][0]["id"], str(dubai_job.id))
+
+        combined = self.client.get("/api/v1/jobs/", {"country": "SA", "region": "ae-dubai"})
+        self.assertEqual(combined.status_code, 200)
+        self.assertEqual(combined.json()["count"], 0)
+        self.assertNotEqual(str(dubai_job.id), str(riyadh_job.id))
 
     def test_salary_constraint_rejects_minimum_greater_than_maximum(self):
         from django.db import IntegrityError, transaction
