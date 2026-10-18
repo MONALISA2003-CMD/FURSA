@@ -1,0 +1,188 @@
+/* FURSA brand layer — shared by the home, search, and vacancy pages. */
+html:root {
+  --navy: #082b63;
+  --teal: #007a6b;
+  --teal-dark: #006456;
+  --mist: #f3f7fb;
+  --muted: #536a80;
+  --line: #dce5ee;
+  --white: #ffffff;
+  --fursa-navy: #082b63;
+  --fursa-teal: #079b84;
+  --fursa-action: #007566;
+  --fursa-ink: #152e4a;
+  --fursa-muted: #5c7085;
+  --fursa-line: #dce5ee;
+  --fursa-soft: #f4f7fb;
+  --fursa-mint: #eaf7f4;
+  --fursa-radius: 18px;
+  color-scheme: light;
+}
+
+body { font-family: Inter, "Noto Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif; }
+.fursa-locale { min-height: 100vh; display: flex; flex-direction: column; background: #fff; color: var(--fursa-ink); }
+.fursa-layout-content { flex: 1; min-width: 0; }
+.fursa-locale a { -webkit-tap-highlight-color: transparent; }
+.fursa-locale a:focus-visible, .fursa-locale button:focus-visible, .fursa-locale input:focus-visible, .fursa-locale select:focus-visible { outline: 3px solid var(--fursa-teal); outline-offset: 3px; }
+.fursa-skip-link { position: fixed; z-index: 100; top: 8px; inset-inline-start: 8px; transform: translateY(-150%); border-radius: 9px; padding: 10px 15px; background: var(--fursa-navy); color: #fff !important; font-size: 13px; font-weight: 800; }
+.fursa-skip-link:focus { transform: translateY(0); }
+
+.fursa-header { position: relative; z-index: 20; background: rgba(255,255,255,.97); border-bottom: 1px solid #e9eef3; }
+.fursa-header-inner { width: min(1180px, calc(100% - 40px)); min-height: 82px; margin-inline: auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.fursa-brand { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; color: var(--fursa-navy) !important; text-decoration: none; }
+.fursa-brand-mark { display: block; width: 46px; height: 46px; object-fit: contain; border-radius: 12px; }
+.fursa-brand-name { display: flex; align-items: baseline; gap: 8px; font-size: 21px; line-height: 1; letter-spacing: -.045em; }
+.fursa-brand-name strong { font-weight: 900; }
+.fursa-brand-name > span { color: var(--fursa-teal); font-size: 18px; font-weight: 800; letter-spacing: 0; }
+.fursa-nav { display: flex; align-items: center; gap: clamp(14px, 2.3vw, 30px); color: #465d74; font-size: 13px; font-weight: 700; }
+.fursa-nav a { text-decoration: none; }
+.fursa-nav a:hover { color: var(--fursa-action); }
+.fursa-nav .fursa-language-switch { border: 1px solid var(--fursa-line); border-radius: 999px; padding: 10px 15px; color: var(--fursa-navy); font-weight: 800; white-space: nowrap; }
+.fursa-nav .fursa-language-switch:hover { border-color: #9cd5cb; background: #f4fbf9; }
+.fursa-menu-toggle { display: none; width: 44px; height: 44px; border: 1px solid var(--fursa-line); border-radius: 12px; background: #fff; color: var(--fursa-navy); align-items: center; justify-content: center; flex-direction: column; gap: 5px; cursor: pointer; }
+.fursa-menu-toggle span { width: 18px; height: 2px; background: currentColor; border-radius: 4px; }
+
+.fursa-home { color: var(--fursa-ink); }
+.fursa-container { width: min(1180px, calc(100% - 40px)); margin-inline: auto; }
+.fursa-hero { overflow: hidden; background: radial-gradient(circle at 83% 15%, rgba(7,155,132,.12), transparent 29%), linear-gradient(135deg, #f4f8fc 0%, #fbfcfe 53%, #eef8f6 100%); border-bottom: 1px solid #eaf0f3; }
+.fursa-hero-inner { width: min(1180px, calc(100% - 40px)); min-height: 590px; margin-inline: auto; padding-block: clamp(42px, 6vw, 76px); display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr); align-items: center; gap: clamp(30px, 5vw, 66px); }
+.fursa-hero-copy { max-width: 650px; }
+.fursa-kicker { display: inline-flex; align-items: center; gap: 9px; margin-bottom: 10px; color: var(--fursa-action); font-size: 11px; line-height: 1.5; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+.rtl .fursa-kicker { letter-spacing: 0; }
+.fursa-kicker-dot { width: 8px; height: 8px; display: inline-block; flex: 0 0 auto; border-radius: 50%; background: var(--fursa-teal); box-shadow: 0 0 0 4px rgba(7,155,132,.12); }
+.fursa-hero h1 { max-width: 650px; margin: 12px 0 17px; color: var(--fursa-navy); font-size: clamp(39px, 5vw, 62px); line-height: 1.08; letter-spacing: -.055em; font-weight: 850; }
+.rtl .fursa-hero h1 { line-height: 1.35; letter-spacing: 0; }
+.fursa-hero-lead { max-width: 580px; margin: 0; color: #4f667b; font-size: clamp(15px, 1.4vw, 17px); line-height: 1.9; }
+.fursa-search-box { margin-top: 28px; max-width: 650px; padding: 16px; border: 1px solid #e0e8ee; border-radius: 17px; background: #fff; box-shadow: 0 16px 44px rgba(8,43,99,.075); }
+.fursa-search-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(155px, .58fr) auto; gap: 9px; align-items: end; }
+.fursa-search-field { display: flex; min-width: 0; flex-direction: column; gap: 7px; }
+.fursa-search-field label { color: #5a7084; font-size: 11px; font-weight: 800; }
+.fursa-search-field input, .fursa-search-field select { width: 100%; min-width: 0; min-height: 48px; padding: 11px 12px; border: 1px solid var(--fursa-line); border-radius: 10px; background: white; color: var(--fursa-ink); font: inherit; font-size: 13px; }
+.fursa-search-field input::placeholder { color: #8494a4; }
+.fursa-primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 48px; padding: 12px 18px; border: 1px solid transparent; border-radius: 10px; background: var(--fursa-action); color: #fff !important; font: inherit; font-size: 13px; line-height: 1.3; font-weight: 850; text-align: center; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background .16s ease, transform .16s ease; }
+.fursa-primary-button:hover { background: var(--fursa-navy); transform: translateY(-1px); }
+.fursa-hero-note { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 14px; color: #63778a; font-size: 11px; line-height: 1.7; }
+.fursa-hero-note span { display: inline-flex; align-items: center; gap: 7px; }
+.fursa-check { color: var(--fursa-action); font-size: 13px; font-weight: 900; }
+.fursa-hero-brand-stage { position: relative; display: grid; place-items: center; min-height: 420px; padding: 25px; border: 1px solid rgba(255,255,255,.9); border-radius: 28px; background: rgba(255,255,255,.75); box-shadow: 0 30px 75px rgba(8,43,99,.075); }
+.fursa-hero-logo { display: block; width: min(100%, 430px); height: auto; max-height: 435px; object-fit: contain; }
+.fursa-brand-caption { position: absolute; bottom: 15px; inset-inline: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; color: #53697d; font-size: 11px; font-weight: 750; text-align: center; }
+.fursa-brand-caption span { padding: 7px 10px; border: 1px solid #e2ecef; border-radius: 999px; background: rgba(255,255,255,.93); }
+
+.fursa-section { padding-block: clamp(50px, 7vw, 78px); }
+.fursa-section-heading { max-width: 760px; margin: 0 auto 30px; text-align: center; }
+.fursa-section-eyebrow { color: #657a8e; font-size: 10px; font-weight: 850; letter-spacing: .14em; line-height: 1.6; text-transform: uppercase; }
+.rtl .fursa-section-eyebrow { letter-spacing: 0; }
+.fursa-section-heading h2, .fursa-trust-copy h2, .fursa-empty-copy h2 { margin: 11px 0 12px; color: var(--fursa-navy); font-size: clamp(26px, 3.2vw, 38px); line-height: 1.25; letter-spacing: -.04em; }
+.rtl .fursa-section-heading h2, .rtl .fursa-trust-copy h2, .rtl .fursa-empty-copy h2 { letter-spacing: 0; line-height: 1.45; }
+.fursa-section-heading p { margin: 0 auto; max-width: 660px; color: var(--fursa-muted); font-size: 14px; line-height: 1.85; }
+.fursa-country-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.fursa-country-card { min-height: 142px; padding: 19px; border: 1px solid var(--fursa-line); border-radius: 15px; background: #fff; display: flex; flex-direction: column; justify-content: space-between; gap: 17px; color: var(--fursa-navy) !important; text-decoration: none; transition: border-color .17s ease, box-shadow .17s ease, transform .17s ease; }
+.fursa-country-card:hover { border-color: #93d3c8; box-shadow: 0 12px 28px rgba(8,43,99,.06); transform: translateY(-2px); }
+.fursa-country-topline { display: flex; align-items: center; justify-content: space-between; color: #718499; font-size: 10px; font-weight: 850; letter-spacing: .1em; }
+.fursa-country-code { display: grid; place-items: center; width: 36px; height: 30px; border-radius: 9px; background: var(--fursa-soft); color: var(--fursa-action); font-size: 11px; letter-spacing: .04em; }
+.fursa-country-name { font-size: 13px; line-height: 1.55; font-weight: 800; }
+.fursa-country-arrow { color: var(--fursa-teal); font-size: 18px; line-height: 1; }
+.fursa-category-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.fursa-category-card { min-height: 82px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 18px; border: 1px solid var(--fursa-line); border-radius: 14px; background: #fff; color: var(--fursa-navy) !important; font-size: 13px; line-height: 1.6; font-weight: 800; text-decoration: none; transition: background .17s ease, border-color .17s ease; }
+.fursa-category-card:hover { border-color: #9cd8ce; background: #f7fcfb; }
+.fursa-category-symbol { width: 31px; height: 31px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 10px; background: #eaf7f4; color: var(--fursa-action); font-size: 14px; }
+.fursa-category-arrow { color: #7890a1; font-size: 17px; font-weight: 600; }
+.fursa-trust-section { display: grid; grid-template-columns: minmax(0,1fr) minmax(290px,.82fr); align-items: center; gap: clamp(30px,7vw,95px); }
+.fursa-trust-copy { max-width: 640px; }
+.fursa-trust-copy p { color: var(--fursa-muted); font-size: 14px; line-height: 1.95; }
+.fursa-inline-link { display: inline-flex; gap: 9px; align-items: center; margin-top: 8px; color: var(--fursa-action) !important; font-size: 13px; font-weight: 850; text-decoration: none; }
+.fursa-inline-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+.fursa-trust-card { padding: 25px; border: 1px solid #d7ece7; border-radius: 20px; background: linear-gradient(145deg, #f3fbf9, #fff); }
+.fursa-trust-card h3 { margin: 0 0 18px; font-size: 17px; color: var(--fursa-navy); }
+.fursa-trust-list { display: grid; gap: 15px; margin: 0; padding: 0; list-style: none; }
+.fursa-trust-list li { display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 12px; align-items: start; }
+.fursa-trust-number { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: #dff3ee; color: var(--fursa-action); font-size: 12px; font-weight: 900; }
+.fursa-trust-list strong { display: block; margin: 1px 0 4px; color: var(--fursa-navy); font-size: 13px; }
+.fursa-trust-list p { margin: 0; color: var(--fursa-muted); font-size: 12px; line-height: 1.7; }
+.fursa-catalogue-note { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 24px; padding: clamp(24px, 4vw, 42px); border-radius: 22px; background: var(--fursa-navy); color: white; }
+.fursa-catalogue-note .fursa-section-eyebrow { color: #a6c7d1; }
+.fursa-catalogue-note h2 { margin: 10px 0; color: white; font-size: clamp(24px, 3vw, 34px); line-height: 1.3; }
+.fursa-catalogue-note p { max-width: 700px; margin: 0; color: #d1dce7; font-size: 13px; line-height: 1.85; }
+.fursa-light-button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; padding: 12px 16px; border-radius: 10px; background: #fff; color: var(--fursa-navy) !important; white-space: nowrap; font-size: 12px; font-weight: 850; text-decoration: none; }
+.fursa-light-button:hover { background: #e9f7f3; }
+.fursa-safety-band { padding-block: 18px; border-top: 1px solid #edf1f4; border-bottom: 1px solid #edf1f4; background: #fbfcfe; }
+.fursa-safety-inner { display: flex; align-items: flex-start; gap: 13px; color: var(--fursa-muted); }
+.fursa-safety-icon { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; background: #e8f5f1; color: var(--fursa-action); font-weight: 900; }
+.fursa-safety-inner p { margin: 0; font-size: 12px; line-height: 1.85; }
+
+.fursa-footer { border-top: 1px solid #e7edf2; background: #fff; }
+.fursa-footer-main, .fursa-footer-bottom { width: min(1180px, calc(100% - 40px)); margin-inline: auto; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.fursa-footer-main { padding-block: 30px; }
+.fursa-footer-brand { display: inline-flex; align-items: center; gap: 9px; color: var(--fursa-navy) !important; text-decoration: none; }
+.fursa-footer-brand img { width: 35px; height: 35px; object-fit: contain; border-radius: 8px; }
+.fursa-footer-brand > span { display: inline-flex; align-items: baseline; gap: 7px; font-size: 16px; letter-spacing: -.03em; }
+.fursa-footer-brand > span > span { color: var(--fursa-teal); font-size: 14px; letter-spacing: 0; }
+.fursa-footer-brand-block p { max-width: 450px; margin: 9px 0 0; color: var(--fursa-muted); font-size: 12px; line-height: 1.7; }
+.fursa-footer-links { display: flex; flex-wrap: wrap; gap: 14px 23px; color: #526a80; font-size: 12px; font-weight: 750; }
+.fursa-footer-links a { text-decoration: none; }
+.fursa-footer-links a:hover { color: var(--fursa-action); }
+.fursa-footer-bottom { min-height: 49px; padding-block: 11px; border-top: 1px solid #eef1f4; color: #728396; font-size: 10px; }
+.fursa-footer-bottom p { margin: 0; text-align: end; line-height: 1.6; }
+
+@media (max-width: 900px) {
+  .fursa-hero-inner { min-height: 0; grid-template-columns: minmax(0,1fr) minmax(250px,.75fr); gap: 25px; }
+  .fursa-hero-brand-stage { min-height: 345px; padding: 18px; }
+  .fursa-hero-logo { max-height: 350px; }
+  .fursa-search-grid { grid-template-columns: minmax(0,1fr) minmax(145px,.6fr); }
+  .fursa-search-grid .fursa-primary-button { grid-column: 1 / -1; }
+  .fursa-country-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .fursa-category-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .fursa-trust-section { grid-template-columns: 1fr; gap: 28px; }
+}
+@media (max-width: 680px) {
+  .fursa-header-inner { width: calc(100% - 32px); min-height: 72px; gap: 12px; }
+  .fursa-brand-mark { width: 40px; height: 40px; }
+  .fursa-brand-name { font-size: 18px; gap: 6px; }
+  .fursa-brand-name > span { font-size: 16px; }
+  .fursa-menu-toggle { display: flex; flex: 0 0 auto; }
+  .fursa-nav { display: none; position: absolute; top: calc(100% + 1px); inset-inline: 0; padding: 14px 16px 18px; border-bottom: 1px solid var(--fursa-line); background: #fff; box-shadow: 0 14px 22px rgba(8,43,99,.08); align-items: stretch; flex-direction: column; gap: 0; }
+  .fursa-nav.is-open { display: flex; }
+  .fursa-nav > a { padding: 13px 4px; border-bottom: 1px solid #eff2f5; }
+  .fursa-nav .fursa-language-switch { align-self: flex-start; margin-top: 10px; padding: 9px 13px; border: 1px solid var(--fursa-line); }
+  .fursa-hero-inner { width: calc(100% - 32px); padding-block: 36px 42px; grid-template-columns: 1fr; gap: 26px; }
+  .fursa-hero h1 { font-size: clamp(35px, 10vw, 46px); line-height: 1.15; }
+  .rtl .fursa-hero h1 { line-height: 1.4; }
+  .fursa-hero-lead { font-size: 14px; }
+  .fursa-search-box { padding: 13px; margin-top: 22px; }
+  .fursa-search-grid { grid-template-columns: 1fr; }
+  .fursa-search-grid .fursa-primary-button { grid-column: auto; width: 100%; }
+  .fursa-search-field input, .fursa-search-field select { min-height: 49px; }
+  .fursa-hero-note { gap: 8px 13px; font-size: 10px; }
+  .fursa-hero-brand-stage { min-height: 0; padding: 13px 13px 48px; border-radius: 21px; }
+  .fursa-hero-logo { width: min(100%, 330px); max-height: 340px; }
+  .fursa-brand-caption { bottom: 9px; inset-inline: 7px; gap: 6px; }
+  .fursa-brand-caption span { padding: 6px 8px; font-size: 9px; }
+  .fursa-container { width: calc(100% - 32px); }
+  .fursa-section { padding-block: 46px; }
+  .fursa-section-heading { margin-bottom: 23px; }
+  .fursa-section-heading h2, .fursa-trust-copy h2 { font-size: 27px; }
+  .fursa-country-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
+  .fursa-country-card { min-height: 118px; padding: 14px; gap: 10px; }
+  .fursa-country-name { font-size: 12px; }
+  .fursa-category-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
+  .fursa-category-card { min-height: 76px; padding: 12px; font-size: 12px; gap: 7px; }
+  .fursa-category-symbol { width: 28px; height: 28px; }
+  .fursa-trust-card { padding: 20px; }
+  .fursa-catalogue-note { grid-template-columns: 1fr; padding: 25px 21px; gap: 19px; }
+  .fursa-light-button { width: 100%; white-space: normal; }
+  .fursa-safety-inner { align-items: flex-start; }
+  .fursa-footer-main, .fursa-footer-bottom { width: calc(100% - 32px); align-items: flex-start; flex-direction: column; gap: 18px; }
+  .fursa-footer-main { padding-block: 25px; }
+  .fursa-footer-bottom { gap: 7px; padding-block: 13px; }
+  .fursa-footer-bottom p { text-align: start; }
+}
+@media (max-width: 360px) {
+  .fursa-brand-name { font-size: 16px; }
+  .fursa-brand-name > span { font-size: 14px; }
+  .fursa-country-card { padding: 11px; }
+  .fursa-category-card { padding: 10px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
