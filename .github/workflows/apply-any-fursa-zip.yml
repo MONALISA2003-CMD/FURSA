@@ -46,11 +46,11 @@ jobs:
             )
             if (( ${#candidates[@]} == 0 )); then
               echo "skip=true" >> "$GITHUB_OUTPUT"
-              echo "No added or modified root ZIP was found; this may be a ZIP-deletion-only commit. Nothing to do."
+              echo "No added or modified root ZIP was found (likely a ZIP-deletion-only commit). Nothing to do."
               exit 0
             fi
             if (( ${#candidates[@]} > 1 )); then
-              printf 'Multiple ZIPs changed. Run this workflow manually and specify zip_file:\n%s\n' "${candidates[*]}" >&2
+              printf 'Multiple ZIPs changed. Run this workflow manually and set zip_file to one of:\n%s\n' "${candidates[*]}" >&2
               exit 1
             fi
             candidate="${candidates[0]}"
@@ -61,7 +61,7 @@ jobs:
               exit 1
             fi
             if (( ${#candidates[@]} > 1 )); then
-              printf 'Multiple ZIPs are available. Set the zip_file input to one of:\n%s\n' "${candidates[*]}" >&2
+              printf 'Multiple ZIPs are available. Set zip_file to one of:\n%s\n' "${candidates[*]}" >&2
               exit 1
             fi
             candidate="${candidates[0]}"
@@ -76,7 +76,8 @@ jobs:
           echo "file=$candidate" >> "$GITHUB_OUTPUT"
           echo "Selected $candidate"
 
-      - name: Validate and extract ZIP
+      - name: Validate, extract, and remove ZIP from runner
+        id: extract
         if: steps.pick.outputs.skip != 'true'
         env:
           ZIP_FILE: ${{ steps.pick.outputs.file }}
@@ -88,19 +89,19 @@ jobs:
           root = Path.cwd().resolve()
           archive_name = os.environ["ZIP_FILE"]
           archive = root / archive_name
-          protected = {archive_name, ".github/workflows/apply-any-fursa-zip.yml",
-                       ".github/workflows/apply-fursa-bundle.yml"}
           max_files, max_bytes = 5000, 100 * 1024 * 1024
+          files = {}
+          delete = []
 
           def clean(raw):
               if not isinstance(raw, str) or not raw.strip() or "\\" in raw or "\x00" in raw:
                   raise ValueError(f"Invalid path: {raw!r}")
+              if any(ord(ch) < 32 for ch in raw):
+                  raise ValueError(f"Control character in path: {raw!r}")
               p = PurePosixPath(raw)
               if p.is_absolute() or any(x in ("", ".", "..") for x in p.parts) or ".git" in p.parts:
                   raise ValueError(f"Unsafe path: {raw!r}")
               rel = p.as_posix()
-              if rel in protected:
-                  raise ValueError(f"Protected path: {rel}")
               if rel == ".github/workflows" or rel.startswith(".github/workflows/"):
                   raise ValueError(f"Workflow files must be managed manually: {rel}")
               return rel
@@ -120,16 +121,20 @@ jobs:
               infos = z.infolist()
               if len(infos) > max_files or sum(i.file_size for i in infos) > max_bytes:
                   raise SystemExit("ZIP exceeds safety limits.")
+              if z.testzip() is not None:
+                  raise SystemExit("ZIP contains a corrupt member or CRC mismatch.")
               names = [i.filename for i in infos]
               manifest = {"version": "plain-zip", "replace": [], "delete": []}
-              files = {}
 
               if "manifest.json" in names:
                   try:
                       manifest = json.loads(z.read("manifest.json").decode("utf-8"))
                   except Exception as e:
                       raise SystemExit(f"Invalid manifest.json: {e}")
-                  replace, delete = manifest.get("replace", []), manifest.get("delete", [])
+                  if not isinstance(manifest, dict):
+                      raise SystemExit("manifest.json must contain a JSON object.")
+                  replace = manifest.get("replace", [])
+                  delete = manifest.get("delete", [])
                   if not isinstance(replace, list) or not isinstance(delete, list):
                       raise SystemExit("Manifest replace/delete must be arrays.")
                   replace = [clean(p) for p in replace]
@@ -138,49 +143,63 @@ jobs:
                       raise SystemExit("Duplicate manifest path.")
                   if set(replace) & set(delete):
                       raise SystemExit("A path cannot be both replaced and deleted.")
-                  for i in infos:
-                      if i.is_dir() or i.filename == "manifest.json":
+                  for info in infos:
+                      if info.is_dir() or info.filename == "manifest.json":
                           continue
-                      if ((i.external_attr >> 16) & 0o170000) == stat.S_IFLNK:
-                          raise SystemExit(f"Symlink forbidden: {i.filename}")
-                      if not i.filename.startswith("payload/"):
-                          raise SystemExit(f"Expected payload/ entry: {i.filename}")
-                      rel = clean(i.filename[len("payload/"):])
+                      if ((info.external_attr >> 16) & 0o170000) == stat.S_IFLNK:
+                          raise SystemExit(f"Symlink forbidden: {info.filename}")
+                      if not info.filename.startswith("payload/"):
+                          raise SystemExit(f"Expected payload/ entry: {info.filename}")
+                      rel = clean(info.filename[len("payload/"):])
                       if rel in files:
                           raise SystemExit(f"Duplicate payload: {rel}")
-                      files[rel] = z.read(i)
+                      files[rel] = z.read(info)
                   if set(files) != set(replace):
                       raise SystemExit("Manifest and payload file list do not match.")
+                  changed_paths = replace + delete
               else:
-                  delete = []
-                  for i in infos:
-                      if i.is_dir():
+                  for info in infos:
+                      if info.is_dir():
                           continue
-                      if ((i.external_attr >> 16) & 0o170000) == stat.S_IFLNK:
-                          raise SystemExit(f"Symlink forbidden: {i.filename}")
-                      rel = clean(i.filename)
+                      if ((info.external_attr >> 16) & 0o170000) == stat.S_IFLNK:
+                          raise SystemExit(f"Symlink forbidden: {info.filename}")
+                      rel = clean(info.filename)
                       if rel in files:
                           raise SystemExit(f"Duplicate ZIP path: {rel}")
-                      files[rel] = z.read(i)
+                      files[rel] = z.read(info)
+                  changed_paths = list(files)
 
-          deleted = []
+          # Validate destinations before changing files.
+          for rel in changed_paths:
+              target_for(rel)
+          for rel in files:
+              target_for(rel)
+
           for rel in delete:
-              p = target_for(rel)
-              if p.is_symlink() or p.is_file():
-                  p.unlink()
-                  deleted.append(rel)
-              elif p.exists():
+              path = target_for(rel)
+              if path.is_symlink() or path.is_file():
+                  path.unlink()
+              elif path.exists():
                   raise SystemExit(f"Delete path is not a file: {rel}")
 
-          for rel, data in files.items():
-              p = target_for(rel)
-              if p.is_symlink():
-                  p.unlink()
-              p.parent.mkdir(parents=True, exist_ok=True)
-              p.write_bytes(data)
+          for rel, content in files.items():
+              path = target_for(rel)
+              if path.is_symlink():
+                  path.unlink()
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(content)
 
-          print(f"Applied {archive_name}: {len(files)} files written/replaced; {len(deleted)} deleted.")
-          print("Only files explicitly listed in manifest.delete are deleted.")
+          # Remove the uploaded archive from the runner immediately.
+          # The following commit/cleanup steps remove it from GitHub as well.
+          archive.unlink(missing_ok=True)
+          print(f"Applied {archive_name}: {len(files)} files written/replaced; {len(delete)} deleted.")
+
+          output_path = os.environ.get("GITHUB_OUTPUT")
+          if output_path:
+              with open(output_path, "a", encoding="utf-8") as output:
+                  output.write("bundle_paths<<FURSA_BUNDLE_PATHS_EOF\n")
+                  output.write("\n".join(changed_paths))
+                  output.write("\nFURSA_BUNDLE_PATHS_EOF\n")
           PY
 
       - name: Set up Python for validation
@@ -211,19 +230,59 @@ jobs:
         if: steps.pick.outputs.skip != 'true'
         working-directory: apps/web
         run: |
-          npm install
+          npm ci
           npm run typecheck
           npm run build
 
-      - name: Commit applied files
+      - name: Commit validated application files and remove uploaded ZIP
         if: steps.pick.outputs.skip != 'true'
+        env:
+          ZIP_FILE: ${{ steps.pick.outputs.file }}
+          BUNDLE_PATHS: ${{ steps.extract.outputs.bundle_paths }}
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+
+          # Stage only paths declared in the bundle, not generated build output.
+          while IFS= read -r path; do
+            [[ -n "$path" ]] || continue
+            git add -A -- "$path"
+          done <<< "$BUNDLE_PATHS"
+
+          # The uploaded ZIP was removed during extraction.
+          git add -A -- "$ZIP_FILE"
+
+          # Stop tracking build metadata accidentally committed by the older workflow.
+          # The corrected .gitignore excludes future generated TypeScript build information.
+          if git ls-files --error-unmatch apps/web/tsconfig.tsbuildinfo >/dev/null 2>&1; then
+            git rm --cached --force -- apps/web/tsconfig.tsbuildinfo
+          fi
+
           if git diff --cached --quiet; then
-            echo "ZIP made no changes."
+            echo "Bundle made no tracked changes."
             exit 0
           fi
-          git commit -m "Apply FURSA ZIP bundle"
+
+          git commit -m "Apply validated FURSA ZIP bundle"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Remove uploaded ZIP if bundle application fails
+        if: failure() && steps.pick.outputs.skip != 'true' && steps.pick.outputs.file != ''
+        env:
+          ZIP_FILE: ${{ steps.pick.outputs.file }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Stage only the ZIP deletion. Never commit partially extracted app code.
+          git rm -f --ignore-unmatch -- "$ZIP_FILE"
+
+          if git diff --cached --quiet; then
+            echo "No uploaded ZIP deletion to commit."
+            exit 0
+          fi
+
+          git commit -m "Remove failed FURSA ZIP upload"
           git push origin "HEAD:${GITHUB_REF_NAME}"
