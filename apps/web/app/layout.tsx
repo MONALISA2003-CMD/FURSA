@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./brand-tokens.css";
 
 export const metadata: Metadata = {
   title: "FURSA | فرصة — Discover Jobs Across the Gulf",
