@@ -1,9 +1,10 @@
 from django.db import connection
-from django.db.models import Prefetch, Q
+from django.db.models import F, Prefetch, Q
 from django.db.utils import DatabaseError
 from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -15,6 +16,9 @@ from .serializers import (
     RegionPublicSerializer,
     VacancyPublicSerializer,
 )
+
+
+MAX_SEARCH_QUERY_LENGTH = 160
 
 
 class VacancyPagination(PageNumberPagination):
@@ -33,16 +37,33 @@ def safe_route_filter(prefix=""):
 
 
 def public_vacancies_queryset():
+    """Return only reviewed, current vacancies with their source-backed safe route."""
     now = timezone.now()
-    public_routes = ApplicationRoute.objects.filter(status=ApplicationRoute.RouteStatus.OK).filter(safe_route_filter())
+    public_routes = (
+        ApplicationRoute.objects.filter(
+            status=ApplicationRoute.RouteStatus.OK,
+            last_checked_at__isnull=False,
+        )
+        .filter(safe_route_filter())
+        # The route's supporting source must also be attached to that vacancy.
+        .filter(supporting_source__vacancies__pk=F("vacancy_id"))
+    )
     return (
         Vacancy.objects.filter(
             status=Vacancy.Status.PUBLISHED,
             published_at__isnull=False,
             last_checked_at__isnull=False,
+            country__enabled=True,
         )
         .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now))
         .filter(Q(deadline_at__isnull=True) | Q(deadline_at__gte=now))
+        .filter(Q(category__isnull=True) | Q(category__active=True))
+        # Fail closed if an old/direct ORM write assigned a region from another
+        # country, or if the region was disabled after a vacancy was recorded.
+        .filter(
+            Q(region__isnull=True)
+            | (Q(region__enabled=True) & Q(region__country_id=F("country_id")))
+        )
         .filter(sources__isnull=False)
         .filter(application_routes__in=public_routes)
         .select_related("country", "region", "category")
@@ -101,6 +122,8 @@ class PublicVacancyListView(generics.ListAPIView):
         qs = public_vacancies_queryset()
         params = self.request.query_params
         term = (params.get("q") or "").strip()
+        if len(term) > MAX_SEARCH_QUERY_LENGTH:
+            raise ValidationError({"q": f"Search terms must be {MAX_SEARCH_QUERY_LENGTH} characters or fewer."})
         if term:
             if connection.vendor == "postgresql":
                 from django.contrib.postgres.search import SearchQuery, SearchVector
@@ -123,6 +146,7 @@ class PublicVacancyListView(generics.ListAPIView):
                     | Q(description_en__icontains=term)
                     | Q(description_ar__icontains=term)
                 )
+
         country = (params.get("country") or "").strip().upper()
         if country:
             qs = qs.filter(country_id=country)
@@ -132,18 +156,26 @@ class PublicVacancyListView(generics.ListAPIView):
         category = (params.get("category") or "").strip()
         if category:
             qs = qs.filter(category__slug=category)
+
         work_mode = (params.get("work_mode") or "").strip().upper()
-        if work_mode in Vacancy.WorkMode.values:
+        if work_mode and work_mode not in Vacancy.WorkMode.values:
+            raise ValidationError({"work_mode": "Unsupported work mode."})
+        if work_mode:
             qs = qs.filter(work_mode=work_mode)
+
         employment_type = (params.get("employment_type") or "").strip().upper()
-        if employment_type in Vacancy.EmploymentType.values:
+        if employment_type and employment_type not in Vacancy.EmploymentType.values:
+            raise ValidationError({"employment_type": "Unsupported employment type."})
+        if employment_type:
             qs = qs.filter(employment_type=employment_type)
 
         sort = (params.get("sort") or "newest").strip().lower()
+        if sort not in {"newest", "checked"}:
+            raise ValidationError({"sort": "Choose 'newest' or 'checked'."})
         if sort == "checked":
-            qs = qs.order_by("-last_checked_at", "-published_at")
+            qs = qs.order_by("-last_checked_at", "-published_at", "id")
         else:
-            qs = qs.order_by("-published_at", "-received_at")
+            qs = qs.order_by("-published_at", "-received_at", "id")
         return qs
 
 

@@ -20,6 +20,17 @@ Reference basis: UAE Government (https://u.ae/en/about-the-uae/the-seven-emirate
 
 The migration is repeatable and does not create vacancy, source or application-route records. It must run through Django migrations during deployment; do not seed production with ad hoc SQL.
 
+
+## Phase 3 deeper increment — public-query integrity and search contract
+
+The deeper increment hardens the existing API rather than changing its routes or adding a new service. Public queries now fail closed for a vacancy whose region is disabled or belongs to another country, a disabled country, an inactive category, an application route without a check timestamp, or a route whose supporting source is not associated with that vacancy. A direct detail request uses the same public queryset as the list endpoint.
+
+The search contract is explicit: keyword queries are limited to 160 characters; `work_mode` and `employment_type` reject unknown enum values with HTTP 400; `sort` accepts only `newest` and `checked`; and sort ordering adds the stable vacancy ID as a tie-breaker. Existing query names and successful response shape remain compatible with the web client.
+
+Tests in `core/test_catalogue_integrity.py` cover cross-country regions, hidden detail records, route provenance, missing route-check dates, disabled reference data, long search terms and invalid filter values. The existing test suite continues to validate the 38 bilingual region reference records, expiry/deadline gates, CORS, salary constraints and public/private serializer boundaries.
+
+A PostgreSQL GIN full-text index is deliberately not added before a representative-data benchmark. The current catalogue has no real vacancy rows, so a benchmark now would not establish the benefit or the right index shape. Capture baseline query plans and latency after approved source-backed records have been loaded in a non-production/test dataset, then add an index through a separate versioned migration if measurements justify it.
+
 ## Public API
 
 - `GET /api/v1/jobs/?q=...&country=AE&region=ae-dubai&category=it-software&page=1&page_size=12`
@@ -53,6 +64,6 @@ The current search uses PostgreSQL full-text expressions and conventional btree 
 
 ## Validation expectations
 
-The ZIP workflow runs `python manage.py check`, `python manage.py makemigrations --check --dry-run`, the Django test suite, `npm run typecheck`, and `npm run build` before committing extracted files. Tests now cover regional counts by country, bilingual labels, country-scoped regions, and combined country/region search alongside existing publication, expiry, source disclosure, route safety, CORS and salary-constraint checks.
+The ZIP workflow runs `python manage.py check`, `python manage.py makemigrations --check --dry-run`, the Django test suite, `npm run typecheck`, and `npm run build` before committing extracted files. Tests cover regional counts by country, bilingual labels, country-scoped regions and combined country/region search, as well as public-query integrity, route provenance, search parameter validation, publication/expiry gates, source disclosure, CORS and salary constraints.
 
 A successful workflow validates the source tree against the CI SQLite path and frontend build. After deployment, verify the live database health endpoint and confirm `/api/v1/regions/` returns 38 rows, including seven rows from `/api/v1/regions/?country=AE`.

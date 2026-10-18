@@ -154,6 +154,11 @@ class Vacancy(models.Model):
             ),
         ]
 
+    def clean(self):
+        super().clean()
+        if self.region_id and self.country_id and self.region.country_id != self.country_id:
+            raise ValidationError({"region": "The selected region must belong to the selected country."})
+
     def __str__(self):
         return self.title_en or self.title_ar or self.title_original
 

@@ -47,6 +47,16 @@ Use `/api/v1/health/` for a manual dependency/readiness check: it executes `SELE
 
 Render's previous logs showed Python 3.14.8, while GitHub Actions tests on Python 3.12. The Render API environment is pinned to `PYTHON_VERSION=3.12.11`, and `.python-version` keeps the repository default consistent. Verify the next API build logs say Python 3.12.11.
 
+## Phase 3 deeper increment
+
+The API now requires a public route to have a check timestamp and to be supported by a source attached to the same vacancy. Public results exclude disabled countries, inactive categories and cross-country/disabled regions. Query parameters are validated rather than silently ignoring invalid work modes, employment types or sort values. These rules keep the existing public API contract but may return HTTP 400 for malformed search filters.
+
+### Region migration verification is a release gate
+
+A read-only inspection of the FURSA Neon project on 18 October 2026 found `core_region` still empty and `django_migrations` containing `core.0001_initial` and `core.0002_seed_reference_data`, but not `core.0003_seed_regions`. Render's latest API startup logs reported “No migrations to apply” despite the current repository tree containing `0003_seed_regions.py`. This is a source/database consistency discrepancy; do not treat the prior deploy as proof the regions were seeded.
+
+After the next validated bundle deploy, inspect Render API application logs for the migration result, then read the FURSA Neon `fursa` database to verify `core.0003_seed_regions` is recorded and `core_region` contains 38 enabled rows (AE 7, SA 13, QA 8, KW 6, BH 4). If the migration is still reported as not pending and the FURSA Neon database remains empty, stop and resolve the API's database-target/source mismatch before trying any manual data correction. Never seed these tables with ad-hoc SQL.
+
 ## Migration and current scope
 
 The API Start Command must apply migrations before Gunicorn starts:
