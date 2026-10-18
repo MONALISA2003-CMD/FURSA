@@ -20,20 +20,24 @@ This increment stays within the current FURSA monorepo, Django REST Framework AP
 - `sort`: `newest` or `checked`, or omitted (defaults to `newest`).
 - Invalid enum and sort values return HTTP 400 instead of silently producing a different query. Page sizes remain bounded by the existing API pagination class.
 
-### Safe rollout
+### Safe rollout and validation
 
-1. Upload one ZIP to the FURSA repository root on `main`.
-2. Wait for “Apply Any FURSA ZIP” to complete. It must pass Django `check`, migration consistency, backend tests, frontend typecheck and build before the application files are committed.
-3. Verify the resulting commit and Render API/web deployments only in the confirmed `My Workspace`.
-4. Inspect API migration logs and then query only the FURSA project in Neon. The migration should create the reference data; do not issue manual insert/update SQL.
-5. Verify `/api/v1/health/`, `/api/v1/regions/`, `/api/v1/regions/?country=AE`, and the English/Arabic public pages. The job catalogue should remain empty until genuine source-backed vacancies are reviewed and published.
+The ZIP workflow was used to apply the code bundle. The resulting commit is `7e1d7ceae9424e751240e0b8f2b6066992311f88`; the workflow commits extracted application files only after running Django `check`, migration consistency, backend tests, frontend typecheck and build. Both Render API and web services are now live at this commit.
 
-## Known release gate
+The latest Render API logs show `Applying core.0003_seed_regions... OK` at 15:11:45 UTC. Read-only queries against FURSA Neon project `proud-dream-05948771`, branch `br-dawn-cell-b96d38co`, database `fursa` confirm `core.0003_seed_regions` is recorded, all 38 expected regions are enabled (AE 7, SA 13, QA 8, KW 6, BH 4), and there are no duplicate `(country_id, code)` pairs. The database contains zero vacancies by design: no fake job records were created. Render confirms Python 3.12.11, and API root health-check traffic returned HTTP 200.
 
-A read-only check on 18 October 2026 found the FURSA Neon `fursa` database still had zero regions and only core migrations 0001/0002 recorded even though Render API startup logs said “No migrations to apply.” This is unresolved. The next deployment must establish whether the API process is using the intended FURSA Neon database and the current source tree. Do not report Phase 3 production-ready until `0003_seed_regions` is recorded and the 38 region rows are verified.
+A direct public request to `/api/v1/regions/` was not present in Render request logs during this operations pass, so open these routes once in a browser for a final HTTP smoke check:
 
-## Deliberately deferred
+- `https://fursa-api-1440.onrender.com/api/v1/health/`
+- `https://fursa-api-1440.onrender.com/api/v1/regions/`
+- `https://fursa-api-1440.onrender.com/api/v1/regions/?country=AE`
+- `https://fursa-web-a2ot.onrender.com/en`
+- `https://fursa-web-a2ot.onrender.com/ar`
 
-- GIN index for the full-text search vector: benchmark with representative, non-production listings first.
+The migration/data release gate is passed. This final browser smoke check is separate from that verified database state.
+
+## Deliberately deferred optimization and later phases
+
+- GIN index for the full-text search vector: benchmark first using representative, approved non-production listings; no real vacancies exist in the current catalogue, so do not claim an empty-table benchmark proves production performance.
 - Volunteer review/report workflow: Phase 4.
 - Automated ingestion and AI extraction: later phase, after source collection and manual review are stable.
