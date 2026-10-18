@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { SiteFooter, SiteHeader } from "./components/SiteChrome";
 import "./fursa-ui.css";
+import "./phase2-acceptance.css";
 
 type Locale = "en" | "ar";
 

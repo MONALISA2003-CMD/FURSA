@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/phase2-contract-check.mjs",
     "build": "next build",
+    "postbuild": "node scripts/phase2-route-smoke.mjs",
     "start": "next start",
     "typecheck": "tsc --noEmit"
   },

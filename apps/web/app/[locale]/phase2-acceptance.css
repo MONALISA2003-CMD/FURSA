@@ -1,0 +1,88 @@
+/* FURSA Phase 2 / Increment 5: final cross-page polish and mixed-direction safety. */
+
+/* Text from employers and source websites can mix Arabic, Latin text, digits, and URLs.
+   plaintext bidi handling follows the first strong character while isolating each run. */
+.job-card h2 a,
+.job-employer,
+.job-card-meta strong,
+.job-source-line,
+.job-detail-header h1,
+.job-detail-header .job-employer,
+.job-detail-section p,
+.job-source-card,
+.job-compact-facts dd,
+.fursa-country-name,
+.fursa-category-name {
+  unicode-bidi: plaintext;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* Keep numeric IDs, route destinations, salary values, and long source URLs readable in RTL. */
+.job-compact-facts dd[dir="auto"],
+.job-apply-button,
+.job-source-card a,
+.job-source-line a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Shared focus style: sufficiently thick, offset from controls, and based on brand blue. */
+.fursa-locale :where(a, button, input, select, textarea, [tabindex]):focus-visible,
+.job-page :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--brand-blue, #1746c8);
+  outline-offset: 3px;
+}
+
+/* Touch interactions should not rely only on hover, and panels must not scroll the page behind them. */
+.job-advanced-filter-wrap.is-open {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.job-filter-backdrop { touch-action: none; }
+.job-mobile-filter-toggle,
+.job-filter-close,
+.job-filter-chip,
+.job-clear-button,
+.job-clear-inline,
+.job-filter-done,
+.job-pagination button,
+.fursa-menu-toggle,
+.fursa-nav a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Avoid forced word spacing in Arabic and ensure labels have enough room to wrap. */
+.rtl .job-page,
+.rtl .fursa-home { letter-spacing: normal; }
+.rtl .job-card h2,
+.rtl .job-detail-header h1,
+.rtl .job-page-heading h1 { letter-spacing: normal; }
+.job-category-label,
+.job-country-label,
+.job-filter-chip,
+.job-card-link,
+.job-apply-button { max-width: 100%; }
+
+@media (max-width: 560px) {
+  .job-advanced-filter-wrap.is-open {
+    max-width: 100vw;
+    border-radius: 0;
+  }
+  .rtl .job-advanced-filter-wrap.is-open { border-radius: 0; }
+  .job-filter-actions button { min-height: 46px; }
+  .job-filter-chip { min-height: 40px; }
+  .job-pagination button { min-width: 44px; min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .job-card,
+  .job-card-skeleton,
+  .fursa-country-card,
+  .fursa-category-card,
+  .fursa-nav,
+  .job-advanced-filter-wrap {
+    animation: none !important;
+    transition: none !important;
+  }
+}
