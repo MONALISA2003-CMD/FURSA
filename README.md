@@ -2,19 +2,17 @@
 
 **Your Next Opportunity Starts Here.**
 
-FURSA is a bilingual Arabic/English Gulf job-discovery platform. The authoritative product, UX, architecture, stack, requirements and phased roadmap are in [`docs/ENGINEERING_SOURCE_OF_TRUTH.md`](docs/ENGINEERING_SOURCE_OF_TRUTH.md).
+FURSA is a bilingual Arabic/English Gulf job-discovery platform. The product requirements, architecture, data model, acceptance criteria and phased roadmap are described in `docs/ENGINEERING_SOURCE_OF_TRUTH.md`. The accepted Render + Neon deployment decision is recorded in `docs/ARCHITECTURE_DECISIONS.md` pending consolidation into the source-of-truth document.
 
-## Initial repository scaffold
+## Current application scaffold
 
-This bundle starts the project with:
+- `apps/web`: Next.js App Router, React and TypeScript public UI with English/Arabic routes.
+- `apps/api`: Django + Django REST Framework API with root and database-aware health endpoints.
+- PostgreSQL: Neon project `FURSA`, database `fursa`, Frankfurt region.
+- Hosting: Render web services for the frontend and API.
+- CI: GitHub Actions tests backend and typechecks/builds frontend.
 
-- `apps/web`: Next.js public UI in Arabic and English, using responsive FURSA styles.
-- `apps/api`: Django + Django REST Framework API with a health endpoint and PostgreSQL-ready settings.
-- `docs/ENGINEERING_SOURCE_OF_TRUTH.md`: single engineering authority.
-- `.github/workflows/ci.yml`: backend tests and frontend type/build checks.
-- `.github/workflows/apply-fursa-bundle.yml`: add manually from the companion workflow file; it applies the bundle.
-
-The current UI is a scaffold, not a completed job catalogue. The initial job search/listing data workflow is implemented in the later phases in the source-of-truth document.
+The current website is a scaffold, not a completed job catalogue. Job records, search, job detail API endpoints and volunteer review workflow remain to be implemented according to the engineering roadmap.
 
 ## Local development
 
@@ -27,13 +25,11 @@ python -m venv .venv
 # Windows PowerShell: .venv\\Scripts\\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-python manage.py migrate
+python manage.py test
 python manage.py runserver 8000
 ```
 
-Health check: `http://127.0.0.1:8000/api/v1/health/`.
-
-By default local development uses SQLite. Set `DATABASE_URL` to a PostgreSQL URL to use PostgreSQL, for example `postgresql://USER:PASSWORD@HOST:5432/DATABASE`.
+The database-aware health endpoint is `http://127.0.0.1:8000/api/v1/health/`. By default, local development can use SQLite. Set `DATABASE_URL` to a PostgreSQL connection URL to use PostgreSQL locally.
 
 ### Web
 
@@ -47,16 +43,20 @@ Open `http://localhost:3000/en` or `http://localhost:3000/ar`.
 
 ## Environment variables
 
-Copy `.env.example` to `.env` at the repository root for local settings. Never commit real secrets. Render and CI must receive secrets through environment settings, not source files.
+Copy `.env.example` to `.env` for local settings. Never commit real secrets. Render must hold `DATABASE_URL`, `DJANGO_SECRET_KEY`, `DEBUG=false`, and a restricted `ALLOWED_HOSTS` value in its Environment settings. The frontend uses `NEXT_PUBLIC_API_BASE_URL`; it must point to the deployed API base URL without a trailing `/api/v1` suffix unless the frontend code explicitly expects one.
 
-## GitHub bundle updates
+## Phone-friendly ZIP workflow
 
-The repository-level `.github/workflows/apply-fursa-bundle.yml` reads `FURSA_BOOTSTRAP_BUNDLE.zip` from the repository root. The ZIP contains `manifest.json` and a `payload/` directory. Files in `manifest.replace` are created or replaced; only files explicitly listed in `manifest.delete` are deleted. Unlisted files are preserved. The updater refuses path traversal, symlinks in the ZIP, Git internals, and replacement or deletion of the updater workflow itself. The updater file is deliberately managed manually and is not inside the ZIP.
+The updater workflow is `.github/workflows/apply-any-fursa-zip.yml`. Workflow YAML must be installed or updated separately through GitHub's file editor; do not put workflow files in an automatic bundle because the standard GitHub Actions token cannot create/update workflow files without extra permission.
 
-To use the updater, add the workflow file first, then commit the ZIP at the repository root. It runs when the ZIP changes or can be started manually from **Actions → Apply FURSA Bundle → Run workflow**.
+For a bundle update:
 
-For pushes by the workflow to succeed, repository Settings → Actions → General → Workflow permissions must allow **Read and write permissions**. A branch rule that blocks GitHub Actions pushes must also allow this update or be changed. The workflow has a limited `contents: write` permission and runs only on an explicit bundle upload or manual dispatch.
+1. Upload the bundle ZIP to the repository root on branch `main`.
+2. The updater validates `manifest.json`, writes only paths in `manifest.replace`, deletes only explicitly listed paths in `manifest.delete`, runs backend/frontend checks, and commits if checks pass.
+3. Review the Actions run and resulting commit. If the checks fail, the update is not committed.
 
-## What is not wired yet
+The workflow must be installed first from the separate hardened workflow file supplied in the phone setup kit. Do not upload an infrastructure bundle containing `.github/workflows/` paths.
 
-No production database, hosting service, AI key, or production secrets are included. Do not send passwords or API keys in chat. Connect Render when ready to provision the approved PostgreSQL/hosting resources; add only the generated service URLs and credentials to Render's environment settings.
+## Product boundary
+
+The MVP is an evidence-backed job catalogue first: public search, job details, source information, last-checked date and external application routes. Volunteer review and safety reporting follow. AI suggestions are later-phase functionality and must never publish jobs automatically.
