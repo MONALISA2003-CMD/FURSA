@@ -7,7 +7,7 @@ REPOSITORY_ROOT = BASE_DIR.parent.parent
 env = environ.Env(
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
-    CORS_ALLOWED_ORIGINS=(list, []),
+    CORS_ALLOWED_ORIGINS=(list, ["http://localhost:3000"]),
 )
 env_file = REPOSITORY_ROOT / ".env"
 if env_file.is_file():
@@ -16,7 +16,8 @@ if env_file.is_file():
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="unsafe-local-development-key-change-before-deploy")
 DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
-CORS_ALLOWED_ORIGINS = [origin.rstrip("/") for origin in env.list("CORS_ALLOWED_ORIGINS", default=[])]
+CORS_ALLOWED_ORIGINS = [origin.rstrip("/") for origin in env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:3000"] if DEBUG else [])]
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -27,6 +28,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "core",
+    "volunteers.apps.VolunteersConfig",
 ]
 
 MIDDLEWARE = [
@@ -78,6 +80,17 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
+# The web and API use separate Render hostnames. Credentialed volunteer requests
+# therefore use secure cross-origin cookies in production, and CSRF tokens are
+# returned explicitly by the bootstrap endpoint for the X-CSRFToken header.
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_USE_SESSIONS = False
+
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -85,4 +98,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
 }

@@ -13,6 +13,7 @@ const copy = {
     countries: "Countries",
     about: "About FURSA",
     safety: "Safety",
+    volunteerSignIn: "Volunteer sign in",
     language: "العربية",
     menu: "Open navigation menu",
     close: "Close navigation menu",
@@ -28,6 +29,7 @@ const copy = {
     countries: "الدول",
     about: "عن فرصة",
     safety: "السلامة",
+    volunteerSignIn: "دخول المتطوعين",
     language: "English",
     menu: "فتح قائمة التنقل",
     close: "إغلاق قائمة التنقل",
@@ -112,6 +114,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <Link href={`/${locale}#countries`} onClick={closeMenu}>{t.countries}</Link>
           <Link href={`/${locale}#about`} onClick={closeMenu}>{t.about}</Link>
           <Link href={`/${locale}#safety`} onClick={closeMenu}>{t.safety}</Link>
+          <Link href={`/${locale}/volunteer/sign-in`} onClick={closeMenu}>{t.volunteerSignIn}</Link>
           <Link href={languagePath} className="fursa-language-switch" lang={otherLocale} onClick={switchLanguage}>{t.language}</Link>
         </nav>
       </div>
@@ -137,6 +140,7 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           <Link href={`/${locale}/jobs`}>{t.browse}</Link>
           <Link href={`/${locale}#about`}>{t.about}</Link>
           <Link href={`/${locale}#safety`}>{t.safetyGuidance}</Link>
+          <Link href={`/${locale}/volunteer/sign-in`}>{t.volunteerSignIn}</Link>
         </nav>
       </div>
       <div className="fursa-footer-bottom">
