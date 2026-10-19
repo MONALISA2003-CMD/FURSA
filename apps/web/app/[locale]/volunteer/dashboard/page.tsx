@@ -1,6 +1,11 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import DashboardClient from "./DashboardClient";
+import DashboardHome from "./DashboardHome";
 import styles from "../volunteer.module.css";
+
 type Locale = "en" | "ar";
-export default async function VolunteerDashboardPage({ params }: { params: Promise<{ locale: string }> }) { const { locale: rawLocale } = await params; if (rawLocale !== "en" && rawLocale !== "ar") notFound(); const locale = rawLocale as Locale; const links = locale === "ar" ? [{ href: "submissions", label: "طلبات الوظائف" }, { href: "review", label: "قائمة المراجعة" }, { href: "reports", label: "بلاغات السلامة" }] : [{ href: "submissions", label: "Vacancy submissions" }, { href: "review", label: "Review queue" }, { href: "reports", label: "Safety reports" }]; return <main className={styles.page}><DashboardClient locale={locale} /><nav aria-label={locale === "ar" ? "أدوات سير العمل" : "Workflow tools"} style={{ maxWidth: 1050, margin: "20px auto", padding: "0 18px", display: "flex", flexWrap: "wrap", gap: 12 }}>{links.map(link => <Link key={link.href} href={`/${locale}/volunteer/${link.href}`} style={{ border: "1px solid #c9d5e0", borderRadius: 10, padding: "12px 16px", textDecoration: "none", fontWeight: 700, color: "#1268a5" }}>{link.label}</Link>)}</nav></main>; }
+export default async function VolunteerDashboardPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: rawLocale } = await params;
+  if (rawLocale !== "en" && rawLocale !== "ar") notFound();
+  const locale = rawLocale as Locale;
+  return <main className={styles.page}><DashboardHome locale={locale} /></main>;
+}

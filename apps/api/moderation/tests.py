@@ -1,10 +1,10 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
 
 from core.models import ApplicationRoute, Category, Country, Source, Vacancy
-from volunteers.models import VolunteerProfile
+from volunteers.models import AuditEvent, VolunteerProfile
 from .models import SafetyReport, VacancySubmission
 
 User = get_user_model()
@@ -12,20 +12,12 @@ User = get_user_model()
 
 def payload():
     return {
-        "title_original": "Verified Warehouse Supervisor",
-        "title_en": "Warehouse Supervisor",
-        "title_ar": "مشرف مستودع",
-        "employer_name": "Verified Employer",
-        "description_en": "Manage day-to-day warehouse operations.",
-        "country_code": "AE",
-        "employment_type": "FULL_TIME",
-        "work_mode": "ONSITE",
-        "source_name": "Employer careers page",
-        "source_url": "https://careers.example.test/jobs",
-        "source_type": "EMPLOYER_CAREERS",
-        "source_permission_note": "Reviewer checked the employer's official careers page.",
-        "route_type": "WEBSITE",
-        "route_destination": "https://careers.example.test/jobs/warehouse-supervisor",
+        "title_original": "Verified Warehouse Supervisor", "title_en": "Warehouse Supervisor", "title_ar": "مشرف مستودع",
+        "employer_name": "Verified Employer", "description_en": "Manage day-to-day warehouse operations.",
+        "country_code": "AE", "employment_type": "FULL_TIME", "work_mode": "ONSITE",
+        "source_name": "Employer careers page", "source_url": "https://careers.example.test/jobs",
+        "source_type": "EMPLOYER_CAREERS", "source_permission_note": "Source checked by an admin.",
+        "route_type": "WEBSITE", "route_destination": "https://careers.example.test/jobs/warehouse-supervisor",
     }
 
 
@@ -35,11 +27,11 @@ class ModerationWorkflowTests(TestCase):
         self.country = Country.objects.get(code="AE")
         self.category = Category.objects.get(slug="it-software")
         self.contributor = User.objects.create_user(username="contributor@example.test", email="contributor@example.test", password="StrongPassword!123")
-        VolunteerProfile.objects.create(user=self.contributor, role=VolunteerProfile.Role.CONTRIBUTOR)
+        VolunteerProfile.objects.create(user=self.contributor, role=VolunteerProfile.Role.ADMIN)
         self.reviewer = User.objects.create_user(username="reviewer@example.test", email="reviewer@example.test", password="StrongPassword!123")
-        VolunteerProfile.objects.create(user=self.reviewer, role=VolunteerProfile.Role.REVIEWER)
+        VolunteerProfile.objects.create(user=self.reviewer, role=VolunteerProfile.Role.ADMIN)
 
-    def test_contributor_submission_requires_review_and_approval_publishes(self):
+    def test_legacy_submission_can_be_reviewed_by_any_admin(self):
         self.client.force_authenticate(self.contributor)
         created = self.client.post("/api/v1/moderation/submissions/", {"data": payload()}, format="json")
         self.assertEqual(created.status_code, 201, created.data)
@@ -61,17 +53,17 @@ class ModerationWorkflowTests(TestCase):
         self.assertEqual(route.status, ApplicationRoute.RouteStatus.OK)
         self.assertEqual(route.supporting_source_id, vacancy.sources.get().pk)
 
-    def test_contributor_cannot_review_own_submission(self):
+    def test_admin_cannot_review_own_submission(self):
         self.client.force_authenticate(self.contributor)
         created = self.client.post("/api/v1/moderation/submissions/", {"data": payload()}, format="json")
         self.client.post(f"/api/v1/moderation/submissions/{created.data['id']}/submit/")
         response = self.client.post(f"/api/v1/moderation/review-queue/{created.data['id']}/decision/", {"decision": "approve"}, format="json")
         self.assertEqual(response.status_code, 403)
 
-    def test_non_reviewer_cannot_access_review_queue(self):
+    def test_any_active_admin_can_access_legacy_review_queue(self):
         self.client.force_authenticate(self.contributor)
         response = self.client.get("/api/v1/moderation/review-queue/")
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
 
     def test_public_report_does_not_automatically_suspend_vacancy(self):
         source = Source.objects.create(name="Employer source", source_url="https://careers.example.test", source_last_checked_at=timezone.now())
@@ -84,7 +76,7 @@ class ModerationWorkflowTests(TestCase):
         self.assertEqual(vacancy.status, Vacancy.Status.PUBLISHED)
         self.assertEqual(SafetyReport.objects.count(), 1)
 
-    def test_reviewer_can_suspend_with_reason_and_audit_event(self):
+    def test_admin_can_suspend_with_reason_and_audit_event(self):
         source = Source.objects.create(name="Employer source", source_url="https://careers.example.test", source_last_checked_at=timezone.now())
         vacancy = Vacancy.objects.create(title_original="Current job", title_en="Current job", country=self.country, status=Vacancy.Status.PUBLISHED, published_at=timezone.now(), last_checked_at=timezone.now())
         vacancy.sources.add(source)

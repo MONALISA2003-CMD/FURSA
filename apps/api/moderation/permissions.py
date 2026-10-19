@@ -3,7 +3,7 @@ from volunteers.models import VolunteerProfile
 
 
 class ActiveVolunteer(BasePermission):
-    message = "An active FURSA volunteer account is required."
+    message = "An active FURSA admin account is required."
 
     def has_permission(self, request, view):
         user = request.user
@@ -16,9 +16,8 @@ class ActiveVolunteer(BasePermission):
 
 
 class ReviewerOrAdmin(ActiveVolunteer):
-    message = "Only reviewers and administrators can perform this action."
+    """Legacy review endpoints remain available to all active FURSA admins."""
+    message = "An active FURSA admin account is required."
 
     def has_permission(self, request, view):
-        if not super().has_permission(request, view):
-            return False
-        return request.user.volunteer_profile.role in {VolunteerProfile.Role.REVIEWER, VolunteerProfile.Role.ADMIN}
+        return super().has_permission(request, view)
